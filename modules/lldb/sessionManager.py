@@ -12,18 +12,21 @@ def _get_lldb_python_path():
     import subprocess
     import os
     
-    # Try Homebrew LLDB first (works with modern Python)
-    homebrew_lldb = '/opt/homebrew/opt/llvm/bin/lldb'
-    if os.path.exists(homebrew_lldb):
-        try:
-            result = subprocess.run([homebrew_lldb, '-P'], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                path = result.stdout.strip()
-                if os.path.exists(path):
-                    return path
-        except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.CalledProcessError):
-            pass
-    
+    candidates = [
+        '/opt/homebrew/opt/llvm/bin/lldb',  # Homebrew LLDB
+        '/usr/bin/lldb',                     # Xcode / CommandLineTools
+    ]
+    for lldb_bin in candidates:
+        if os.path.exists(lldb_bin):
+            try:
+                result = subprocess.run([lldb_bin, '-P'], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    path = result.stdout.strip()
+                    if os.path.exists(path):
+                        return path
+            except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.CalledProcessError):
+                pass
+
     return None
 
 LLDB_AVAILABLE = False
